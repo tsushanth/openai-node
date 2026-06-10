@@ -103,19 +103,26 @@ export const formatRequestDetails = (details: {
   if (details.headers) {
     details.headers = Object.fromEntries(
       (details.headers instanceof Headers ? [...details.headers] : Object.entries(details.headers)).map(
-        ([name, value]) => [
-          name,
-          (
-            name.toLowerCase() === 'authorization' ||
-            name.toLowerCase() === 'api-key' ||
-            name.toLowerCase() === 'x-api-key' ||
-            name.toLowerCase() === 'x-amz-security-token' ||
-            name.toLowerCase() === 'cookie' ||
-            name.toLowerCase() === 'set-cookie'
-          ) ?
-            '***'
-          : value,
-        ],
+        ([name, value]) => {
+          // Lowercase with an explicit `en-US` locale: on Turkish locales a plain
+          // `.toLowerCase()` maps `I` → `ı`, so `Authorization` becomes
+          // `authorızatıon` and the credential redaction below silently misses it.
+          // https://github.com/openai/openai-node/issues/1928
+          const lowerName = name.toLocaleLowerCase('en-US');
+          return [
+            name,
+            (
+              lowerName === 'authorization' ||
+              lowerName === 'api-key' ||
+              lowerName === 'x-api-key' ||
+              lowerName === 'x-amz-security-token' ||
+              lowerName === 'cookie' ||
+              lowerName === 'set-cookie'
+            ) ?
+              '***'
+            : value,
+          ];
+        },
       ),
     );
   }
